@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="338" viewBox="0 0 900 338" role="img" aria-labelledby="title desc">
+  <title id="title">LW TV</title>
+  <desc id="desc">Floating glass for Android TV, with an illustration of the launcher in Amethyst.</desc>
+  <defs>
+    <linearGradient id="canvas" x2="1" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#101122"/><stop offset=".53" stop-color="#251836"/><stop offset="1" stop-color="#10273a"/>
+    </linearGradient>
+    <radialGradient id="purple"><stop stop-color="#a578ff" stop-opacity=".58"/><stop offset="1" stop-color="#a578ff" stop-opacity="0"/></radialGradient>
+    <radialGradient id="teal"><stop stop-color="#42b6d4" stop-opacity=".5"/><stop offset="1" stop-color="#42b6d4" stop-opacity="0"/></radialGradient>
+    <linearGradient id="rim" x2="1" y2="1" gradientUnits="objectBoundingBox"><stop stop-color="#dac5ff"/><stop offset="1" stop-color="#594e8b"/></linearGradient>
+    <linearGradient id="glass" x2="1" y2="1" gradientUnits="objectBoundingBox"><stop stop-color="#71528c"/><stop offset=".48" stop-color="#3c2b5c"/><stop offset="1" stop-color="#211a39"/></linearGradient>
+    <linearGradient id="card" x2="1" y2="1" gradientUnits="objectBoundingBox"><stop stop-color="#423568"/><stop offset="1" stop-color="#211c37"/></linearGradient>
+    <linearGradient id="cyan" x2="1" y2="1" gradientUnits="objectBoundingBox"><stop stop-color="#4de2d0"/><stop offset="1" stop-color="#2989c9"/></linearGradient>
+    <linearGradient id="pink" x2="1" y2="1" gradientUnits="objectBoundingBox"><stop stop-color="#ff9dce"/><stop offset="1" stop-color="#a455d6"/></linearGradient>
+    <clipPath id="frame"><rect x="1" y="1" width="898" height="336" rx="27"/></clipPath>
+  </defs>
+  <g clip-path="url(#frame)">
+    <rect x="1" y="1" width="898" height="336" fill="url(#canvas)"/>
+    <ellipse cx="665" cy="83" rx="350" ry="216" fill="url(#purple)"/>
+    <ellipse cx="823" cy="302" rx="248" ry="155" fill="url(#teal)"/>
+    <g fill="none" stroke="#d9bfff" stroke-opacity=".15">
+      <path d="M-26 262C178 342 235 130 454 190S782 303 931 160"/>
+      <path d="M-25 271C178 351 235 139 454 199S782 312 932 169"/>
+      <path d="M-24 281C178 361 235 149 454 209S782 322 933 179"/>
+      <path d="M-23 292C178 372 235 160 454 220S782 333 934 190"/>
+    </g>
+    <g font-family="Segoe UI, Arial, sans-serif">
+      <rect x="52" y="53" width="137" height="28" rx="14" fill="#302448" stroke="#8265b7"/>
+      <text x="120" y="72" text-anchor="middle" fill="#dec7ff" font-size="10" font-weight="700" letter-spacing="2">ANDROID TV</text>
+      <text x="47" y="162" fill="#fff5ff" font-size="80" font-weight="700" letter-spacing="-4">LW TV</text>
+      <text x="53" y="202" fill="#e6d3ff" font-size="23" font-weight="500">Floating glass for your TV</text>
+      <text x="54" y="233" fill="#b6b3cf" font-size="15">Favorite apps, inputs and weather.</text>
+      <text x="54" y="276" fill="#cdb8ef" font-size="11" font-weight="700" letter-spacing="2">AD-FREE HOME LAUNCHER</text>
+      <rect x="412" y="54" width="430" height="251" rx="19" fill="#090c18" opacity=".48"/>
+      <rect x="402" y="43" width="430" height="247" rx="18" fill="#19182b" stroke="url(#rim)" stroke-width="2"/>
+      <rect x="414" y="55" width="406" height="223" rx="12" fill="url(#glass)"/>
+      <text x="431" y="81" fill="#f3eaff" font-size="13" font-weight="700" letter-spacing="1">LW TV</text>
+      <rect x="532" y="64" width="138" height="23" rx="11" fill="#251c3e" stroke="#674f8d"/>
+      <text x="550" y="79" fill="#ead3ff" font-size="8" font-weight="700">Home</text>
+      <text x="583" y="79" fill="#b9adcf" font-size="8">Apps</text>
+      <text x="609" y="79" fill="#b9adcf" font-size="8">Inputs</text>
+      <text x="638" y="79" fill="#b9adcf" font-size="8">Settings</text>
+      <text x="785" y="80" text-anchor="end" fill="#e0d5ef" font-size="12">7:42</text>
+      <rect x="431" y="101" width="372" height="63" rx="10" fill="url(#card)" stroke="#736091"/>
+      <text x="447" y="122" fill="#c2aadb" font-size="8" letter-spacing="1.2">EVENING SCENE</text>
+      <text x="445" y="147" fill="#f8edff" font-size="22" font-weight="600">Good evening</text>
+      <circle cx="721" cy="131" r="11" fill="#f6d492"/>
+      <circle cx="726" cy="126" r="9" fill="#2d2346"/>
+      <text x="739" y="136" fill="#f6ebff" font-size="13">22°</text>
+      <circle cx="780" cy="132" r="12" fill="none" stroke="#6f557f" stroke-width="2.5"/>
+      <path d="M780 120A12 12 0 0 1 790 138" fill="none" stroke="#ffc295" stroke-width="2.5" stroke-linecap="round"/>
+      <text x="780" y="135" text-anchor="middle" fill="#fff1ea" font-size="7">AQI</text>
+      <text x="430" y="186" fill="#f0e5ff" font-size="12" font-weight="600">Favorites</text>
+      <rect x="428" y="194" width="114" height="63" rx="12" fill="#60dbc9" opacity=".17"/>
+      <rect x="431" y="197" width="109" height="56" rx="10" fill="url(#card)" stroke="#a4e5e0" stroke-width="2"/>
+      <rect x="551" y="200" width="119" height="50" rx="9" fill="url(#card)" stroke="#8564aa"/>
+      <rect x="680" y="200" width="122" height="50" rx="9" fill="url(#card)" stroke="#756393"/>
+      <rect x="442" y="209" width="29" height="29" rx="8" fill="url(#cyan)"/>
+      <path d="m453 217 10 6-10 6z" fill="#fff"/>
+      <rect x="561" y="212" width="26" height="26" rx="7" fill="url(#pink)"/>
+      <path d="M569 220h10v10h-10z" fill="none" stroke="#fff" stroke-width="1.4"/>
+      <rect x="691" y="212" width="26" height="26" rx="7" fill="#816bc1"/>
+      <path d="M697 220h14v9h-14zm4 12h6" fill="none" stroke="#fff" stroke-width="1.4"/>
+      <text x="479" y="227" fill="#f7efff" font-size="10" font-weight="600">Watch</text>
+      <text x="596" y="228" fill="#f7efff" font-size="10" font-weight="600">Music</text>
+      <text x="726" y="228" fill="#f7efff" font-size="10" font-weight="600">HDMI</text>
+    </g>
+  </g>
+  <rect x="1" y="1" width="898" height="336" rx="27" fill="none" stroke="#715c99"/>
+</svg>

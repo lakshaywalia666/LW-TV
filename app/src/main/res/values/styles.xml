@@ -1,0 +1,23 @@
+<resources>
+    <string name="app_name">LW TV</string>
+
+    <style name="LwTheme" parent="android:style/Theme.Material.NoActionBar">
+        <item name="android:windowBackground">#080C19</item>
+        <item name="android:colorAccent">#B9D4FF</item>
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowActionModeOverlay">true</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:colorBackground">#080C19</item>
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:alertDialogTheme">@style/LwDialog</item>
+    </style>
+    <style name="LwDialog" parent="android:style/Theme.Material.Dialog.Alert">
+        <item name="android:colorAccent">#B9D4FF</item>
+        <item name="android:colorBackgroundFloating">#161F36</item>
+        <item name="android:colorControlHighlight">#40B9D4FF</item>
+    </style>
+    <style name="SheetAnimation">
+        <item name="android:windowEnterAnimation">@anim/sheet_enter</item>
+        <item name="android:windowExitAnimation">@anim/sheet_exit</item>
+    </style>
+</resources>

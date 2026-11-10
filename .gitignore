@@ -1,0 +1,14 @@
+/.build-*/
+/signing/
+/tools/
+/original/
+/verification/
+/dist/
+/previews/
+/tv.ps1
+*.apk
+*.keystore
+*.jks
+*.p12
+.env
+.env.*
