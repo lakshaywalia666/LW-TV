@@ -16,22 +16,23 @@ final class Atmosphere extends View {
     private final Path[] layers = {new Path(), new Path(), new Path(), new Path()};
     private final ThemePalette theme;
     private final VisualStyle style;
-    private final boolean panel;
     private Shader base;
     private Shader light;
     private Shader haze;
     private Shader roomLight;
+    private Shader previousLight;
+    private float lightMix = 1f;
+    private float lightCenter = .5f;
     private int ambient;
     private float offsetX;
     private float offsetY;
     private ValueAnimator transition;
     private boolean drifting;
 
-    Atmosphere(Context context, ThemePalette theme, VisualStyle style, boolean panel) {
+    Atmosphere(Context context, ThemePalette theme, VisualStyle style) {
         super(context);
         this.theme = theme;
         this.style = style;
-        this.panel = panel;
         ambient = theme.aurora;
         setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_NO);
     }
@@ -40,10 +41,12 @@ final class Atmosphere extends View {
     protected void onSizeChanged(int width, int height, int oldWidth, int oldHeight) {
         if (width == 0 || height == 0) return;
         base = new LinearGradient(0, 0, width, height,
-                panel ? theme.panel : style.sceneBase(theme), style.sceneBase(theme), Shader.TileMode.CLAMP);
-        light = bloom(width * .84f, height * .13f, width * .75f, theme.aurora, panel ? 95 : 90);
-        haze = bloom(width * .18f, height * .76f, width * .65f, theme.accent, panel ? 25 : 30);
-        updateRoomLight();
+                style.sceneBase(theme), VisualStyle.blend(theme.panel, 0xFF080910, .38f), Shader.TileMode.CLAMP);
+        light = bloom(width * .83f, height * .06f, width * .67f, theme.aurora, 110);
+        haze = bloom(width * .16f, height * .70f, width * .65f, theme.accent, 28);
+        if (transition != null) transition.cancel();
+        roomLight = roomBloom(ambient, lightCenter);
+        lightMix = 1f;
         for (int layer = 0; layer < layers.length; layer++) {
             Path path = layers[layer];
             path.reset();
@@ -64,6 +67,14 @@ final class Atmosphere extends View {
                 path.lineTo(width * 1.2f, height * 1.2f);
                 path.lineTo(-width * .1f, height * 1.2f);
                 path.close();
+            } else if (style.wallpaper == 0) {
+                float crest = height * (.54f + layer * .027f);
+                path.moveTo(-width * .1f, crest + height * .24f);
+                path.cubicTo(width * .32f, crest + height * .35f, width * .58f,
+                        crest - height * .04f, width * 1.1f, crest - height * .56f);
+                path.cubicTo(width * .70f, crest - height * .04f, width * .33f,
+                        crest + height * .39f, -width * .1f, crest + height * .24f);
+                path.close();
             } else {
                 for (int line = 0; line < 5; line++) {
                     float y = height * (.32f + layer * .10f + line * .027f);
@@ -77,8 +88,21 @@ final class Atmosphere extends View {
     }
 
     void focusLight(int color, float horizontal, float vertical) {
+        if (getWidth() == 0) return;
         if (transition != null) transition.cancel();
         int from = ambient;
+        float startCenter = lightCenter;
+        float targetCenter = .5f + horizontal * .32f;
+        roomLight = roomBloom(color, targetCenter);
+        if (style.motion == 3) {
+            ambient = color;
+            lightCenter = targetCenter;
+            lightMix = 1f;
+            invalidate();
+            return;
+        }
+        previousLight = roomBloom(from, startCenter);
+        lightMix = 0f;
         float startX = offsetX;
         float startY = offsetY;
         float distance = getResources().getDisplayMetrics().density * 16f * style.depthAmount();
@@ -91,7 +115,8 @@ final class Atmosphere extends View {
             ambient = VisualStyle.blend(from, color, progress);
             offsetX = startX + (targetX - startX) * progress;
             offsetY = startY + (targetY - startY) * progress;
-            updateRoomLight();
+            lightMix = progress;
+            lightCenter = startCenter + (targetCenter - startCenter) * progress;
             invalidate();
         });
         transition.start();
@@ -102,10 +127,9 @@ final class Atmosphere extends View {
         invalidate();
     }
 
-    private void updateRoomLight() {
-        if (getWidth() == 0 || getHeight() == 0) return;
-        roomLight = bloom(getWidth() * .43f, getHeight() * .72f, getWidth() * .76f,
-                ambient, Math.round(75 * style.lightAmount()));
+    private Shader roomBloom(int color, float center) {
+        return bloom(getWidth() * center, getHeight() * .70f, getWidth() * .61f,
+                color, Math.round(58 * style.lightAmount()));
     }
 
     @Override
@@ -115,7 +139,8 @@ final class Atmosphere extends View {
         fill(canvas, base);
         fill(canvas, light);
         fill(canvas, haze);
-        fill(canvas, roomLight);
+        if (lightMix < 1f && previousLight != null) fill(canvas, previousLight, 1f - lightMix);
+        fill(canvas, roomLight, lightMix);
         paint.setShader(null);
         float drift = drifting ? (float) Math.sin(SystemClock.uptimeMillis() / 24_000d) : 0;
         for (int layer = 0; layer < layers.length; layer++) {
@@ -126,16 +151,19 @@ final class Atmosphere extends View {
                 paint.setStyle(Paint.Style.FILL);
                 paint.setColor(GlassSurface.tint(
                         VisualStyle.blend(theme.panel, theme.aurora, .12f + layer * .1f), 44 + layer * 15));
+            } else if (style.wallpaper == 0) {
+                paint.setStyle(Paint.Style.FILL);
+                paint.setColor(GlassSurface.tint(theme.aurora, 12 + layer * 4));
             } else {
                 paint.setStyle(Paint.Style.STROKE);
                 paint.setStrokeWidth(getResources().getDisplayMetrics().density
                         * (style.wallpaper == 2 ? 1.25f : .75f));
-                paint.setColor(GlassSurface.tint(theme.accent, panel ? 14 : 12 + layer * 4));
+                paint.setColor(GlassSurface.tint(theme.accent, 12 + layer * 4));
             }
             canvas.drawPath(layers[layer], paint);
             canvas.restoreToCount(save);
         }
-        if (style.wallpaper == 3 && !panel) {
+        if (style.wallpaper == 3) {
             paint.setStyle(Paint.Style.FILL);
             paint.setColor(GlassSurface.tint(theme.accent, 24));
             canvas.drawCircle(getWidth() * .80f + offsetX * .4f, getHeight() * .22f,
@@ -145,7 +173,11 @@ final class Atmosphere extends View {
     }
 
     private void fill(Canvas canvas, Shader shader) {
-        paint.setAlpha(255);
+        fill(canvas, shader, 1f);
+    }
+
+    private void fill(Canvas canvas, Shader shader, float opacity) {
+        paint.setAlpha(Math.round(255 * opacity));
         paint.setShader(shader);
         canvas.drawRect(0, 0, getWidth(), getHeight(), paint);
     }

@@ -8,8 +8,10 @@ import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.StateListDrawable;
 import android.media.tv.TvInputInfo;
 import android.media.tv.TvInputManager;
 import android.net.Uri;
@@ -25,6 +27,7 @@ import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.view.Window;
 import android.view.WindowManager;
 import android.view.animation.DecelerateInterpolator;
@@ -74,6 +77,7 @@ public final class MainActivity extends Activity {
     private final EnumMap<Page, String> focusByPage = new EnumMap<>(Page.class);
     private final Map<String, View> focusTargets = new LinkedHashMap<>();
     private final List<View> tabButtons = new ArrayList<>();
+    private View tabIndicator;
     private final List<AppTile> appTiles = new ArrayList<>();
     private final Runnable showIdle = this::showIdleClock;
     private final Runnable shiftClock = this::shiftIdleClock;
@@ -86,7 +90,6 @@ public final class MainActivity extends Activity {
     private ThemePalette theme;
     private VisualStyle style;
     private Atmosphere wallpaper;
-    private FocusHalo focusHalo;
     private WeatherScene weatherScene;
     private AqiRing aqiRing;
     private FrameLayout root;
@@ -131,6 +134,7 @@ public final class MainActivity extends Activity {
         active = true;
         apps = catalog.load();
         render();
+        animatePageEntry(page);
         hideSystemBars(getWindow());
         updateHeader();
         resetIdleTimer();
@@ -236,12 +240,45 @@ public final class MainActivity extends Activity {
             arrangementOrder = null;
             arrangingPackage = null;
         }
+        Page previous = page;
         page = target;
         render();
-        content.setAlpha(.5f);
-        content.setTranslationY(dp(8));
-        content.animate().alpha(1).translationY(0).setDuration(style.duration(220)).start();
+        animatePageEntry(previous);
         resetIdleTimer();
+    }
+
+    private void animatePageEntry(Page previous) {
+        if (style.motion == 3) return;
+        LinearLayout entering = content;
+        ViewTreeObserver observer = entering.getViewTreeObserver();
+        observer.addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
+            @Override public boolean onPreDraw() {
+                (observer.isAlive() ? observer : entering.getViewTreeObserver()).removeOnPreDrawListener(this);
+                if (entering != content) return true;
+                View from = tabButtons.get(previous.ordinal());
+                View to = tabButtons.get(page.ordinal());
+                float end = to.getLeft() + (to.getWidth() - tabIndicator.getWidth()) / 2f;
+                if (previous != page) {
+                    tabIndicator.setTranslationX(from.getLeft() + (from.getWidth() - tabIndicator.getWidth()) / 2f);
+                    tabIndicator.animate().translationX(end).setDuration(style.duration(300)).start();
+                }
+                int direction = Integer.compare(page.ordinal(), previous.ordinal());
+                Rect visible = new Rect();
+                int order = 0;
+                for (int i = 0; i < entering.getChildCount(); i++) {
+                    View row = entering.getChildAt(i);
+                    if (row.getClass() == View.class || !row.getLocalVisibleRect(visible)) continue;
+                    row.setAlpha(.42f);
+                    row.setTranslationX(dp(direction * 15));
+                    row.setTranslationY(dp(10));
+                    row.animate().alpha(1).translationX(0).translationY(0)
+                            .setStartDelay(style.duration(Math.min(order++, 4) * 28))
+                            .setDuration(style.duration(320))
+                            .setInterpolator(new DecelerateInterpolator(1.6f)).start();
+                }
+                return true;
+            }
+        });
     }
 
     private void render() {
@@ -263,7 +300,7 @@ public final class MainActivity extends Activity {
 
         root = new FrameLayout(this);
         root.setBackgroundColor(style.sceneBase(theme));
-        wallpaper = new Atmosphere(this, theme, style, false);
+        wallpaper = new Atmosphere(this, theme, style);
         root.addView(wallpaper, new FrameLayout.LayoutParams(-1, -1));
         screen = column();
         screen.setClipChildren(false);
@@ -284,12 +321,6 @@ public final class MainActivity extends Activity {
         content = column();
         content.setClipChildren(false);
         scroll.addView(content, new ScrollView.LayoutParams(-1, -2));
-        scroll.setOnScrollChangeListener((view, x, y, oldX, oldY) -> {
-            View focused = getCurrentFocus();
-            if (focused instanceof AppTile) {
-                focusHalo.follow(focused, root, ((AppTile) focused).ambient, style);
-            }
-        });
 
         switch (page) {
             case HOME:
@@ -311,8 +342,6 @@ public final class MainActivity extends Activity {
         if (firstItem != null) {
             for (View button : tabButtons) button.setNextFocusDownId(firstItem.getId());
         }
-        focusHalo = new FocusHalo(this);
-        root.addView(focusHalo, new FrameLayout.LayoutParams(-1, -1));
         setContentView(root);
         View target = focusTargets.get(restore);
         if (target == null) target = firstItem == null ? tab : firstItem;
@@ -336,12 +365,19 @@ public final class MainActivity extends Activity {
         LinearLayout tabs = row();
         tabs.setGravity(Gravity.CENTER_VERTICAL);
         tabs.setPadding(dp(4), dp(4), dp(4), dp(4));
-        tabs.setBackground(glass(21, Color.TRANSPARENT, false, true));
         tabs.setClipChildren(false);
-        rail.addView(tabs, new LinearLayout.LayoutParams(-2, dp(43)));
+        FrameLayout navigation = new FrameLayout(this);
+        navigation.setClipChildren(false);
+        rail.addView(navigation, new LinearLayout.LayoutParams(-2, dp(43)));
+        navigation.addView(tabs, new FrameLayout.LayoutParams(-2, -1));
         for (Page destination : Page.values()) {
             TextView tab = button(destination.label, 15, destination == page,
                     "tab:" + destination.name(), () -> openPage(destination));
+            StateListDrawable highlight = new StateListDrawable();
+            highlight.addState(new int[]{android.R.attr.state_focused},
+                    glass(15, Color.TRANSPARENT, false, true));
+            tab.setBackground(highlight);
+            tab.setTextColor(destination == page ? TEXT : MUTED);
             tab.setGravity(Gravity.CENTER);
             tab.setPadding(dp(13), 0, dp(13), 0);
             tabs.addView(tab, new LinearLayout.LayoutParams(-2, -1));
@@ -352,6 +388,17 @@ public final class MainActivity extends Activity {
             }
             tabButtons.add(tab);
         }
+        View indicator = new View(this);
+        tabIndicator = indicator;
+        indicator.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        android.graphics.drawable.GradientDrawable pill = new android.graphics.drawable.GradientDrawable();
+        pill.setColor(accent());
+        pill.setCornerRadius(dp(2));
+        indicator.setBackground(pill);
+        navigation.addView(indicator, new FrameLayout.LayoutParams(dp(18), dp(3), Gravity.BOTTOM | Gravity.LEFT));
+        View selectedTab = tabButtons.get(page.ordinal());
+        navigation.addOnLayoutChangeListener((v, l, t, r, b, oldL, oldT, oldR, oldB) ->
+                indicator.setTranslationX(selectedTab.getLeft() + (selectedTab.getWidth() - indicator.getWidth()) / 2f));
         rail.addView(new View(this), new LinearLayout.LayoutParams(0, 1, 1));
         TextClock clock = new TextClock(this);
         clock.setTextColor(TEXT);
@@ -372,18 +419,12 @@ public final class MainActivity extends Activity {
     }
 
     private void addHero() {
-        FrameLayout hero = new FrameLayout(this);
-        hero.setBackground(glass(24, Color.TRANSPARENT, true, false));
-        hero.setClipToOutline(true);
-        content.addView(hero, new LinearLayout.LayoutParams(-1, dp(132)));
-        FrameLayout.LayoutParams artSize = new FrameLayout.LayoutParams(-1, -1);
-        artSize.setMargins(dp(1), dp(1), dp(1), dp(1));
-        hero.addView(new Atmosphere(this, theme, style, true), artSize);
-
         LinearLayout foreground = row();
         foreground.setGravity(Gravity.CENTER_VERTICAL);
-        foreground.setPadding(dp(25), 0, dp(18), 0);
-        hero.addView(foreground, new FrameLayout.LayoutParams(-1, -1));
+        foreground.setMinimumHeight(dp(108));
+        foreground.setPadding(0, dp(6), dp(2), dp(6));
+        foreground.setClipChildren(false);
+        content.addView(foreground, new LinearLayout.LayoutParams(-1, -2));
         LinearLayout welcome = column();
         foreground.addView(welcome, new LinearLayout.LayoutParams(0, -2, 1));
         TextClock date = new TextClock(this);
@@ -393,9 +434,10 @@ public final class MainActivity extends Activity {
         date.setTextColor(accent());
         date.setTypeface(MEDIUM);
         date.setIncludeFontPadding(false);
-        date.setLetterSpacing(.09f);
+        date.setLetterSpacing(.035f);
         welcome.addView(date);
-        greeting = label("", 32, TEXT, MEDIUM);
+        greeting = label("", 36, TEXT, MEDIUM);
+        greeting.setLetterSpacing(-.025f);
         greeting.setMaxLines(2);
         greeting.setEllipsize(TextUtils.TruncateAt.END);
         spaceAbove(welcome, greeting, 10);
@@ -404,7 +446,8 @@ public final class MainActivity extends Activity {
 
     private void addWeatherCard(LinearLayout foreground) {
         LinearLayout card = column();
-        card.setBackground(glass(18, Color.TRANSPARENT, false, false));
+        focusable(card, "weather:source", glass(18, Color.TRANSPARENT, false, false), this::showWeatherDetails);
+        weatherInfo = card;
         card.setPadding(dp(13), dp(7), dp(10), dp(9));
         int cardWidth = getResources().getConfiguration().screenWidthDp < 720 ? 265 : 310;
         LinearLayout.LayoutParams cardSize = new LinearLayout.LayoutParams(dp(cardWidth), -2);
@@ -418,11 +461,10 @@ public final class MainActivity extends Activity {
         location.setSingleLine(true);
         location.setEllipsize(TextUtils.TruncateAt.END);
         details.addView(location, new LinearLayout.LayoutParams(0, -2, 1));
-        TextView info = button("↗", 17, false, "weather:source", this::showWeatherDetails);
+        TextView info = label("↗", 15, accent(), MEDIUM);
+        info.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
         info.setGravity(Gravity.CENTER);
-        info.setContentDescription("Weather and air quality details");
         details.addView(info, new LinearLayout.LayoutParams(dp(30), dp(26)));
-        weatherInfo = info;
 
         LinearLayout data = row();
         data.setGravity(Gravity.CENTER_VERTICAL);
@@ -500,7 +542,7 @@ public final class MainActivity extends Activity {
             title.setGravity(Gravity.CENTER_VERTICAL);
             TextView heading = label(arrangingPackage == null ? "Favorites" : "Arrange favorites", 22, TEXT, MEDIUM);
             title.addView(heading, new LinearLayout.LayoutParams(0, -2, 1));
-            String hint = arrangingPackage == null ? "Hold OK to arrange · Menu for options"
+            String hint = arrangingPackage == null ? (displayed.isEmpty() ? "Pin apps from All apps" : "Hold OK to arrange")
                     : "Arrows move · OK saves · Back cancels";
             title.addView(label(hint, 12, MUTED, null));
             spaceAbove(content, title, 16);
@@ -516,8 +558,17 @@ public final class MainActivity extends Activity {
         List<View> cells = new ArrayList<>();
         for (AppCatalog.Entry app : displayed) cells.add(appTile(app, !home && pins.contains(app.packageName())));
         if (home) {
-            TextView browse = button("+   Browse apps", 16, false, "browse", () -> openPage(Page.APPS));
-            browse.setGravity(Gravity.CENTER);
+            LinearLayout browse = column();
+            focusable(browse, "browse", null, () -> openPage(Page.APPS));
+            browse.setContentDescription("Browse apps");
+            TextView plus = label("+", 31, MUTED, LIGHT);
+            plus.setGravity(Gravity.CENTER);
+            plus.setDuplicateParentStateEnabled(true);
+            plus.setBackground(glass(16, Color.TRANSPARENT, false, true));
+            browse.addView(plus, new LinearLayout.LayoutParams(-1, 0, 1));
+            TextView caption = label("Browse apps", 15, MUTED, MEDIUM);
+            caption.setGravity(Gravity.CENTER);
+            spaceAbove(browse, caption, 5);
             cells.add(browse);
         }
         if (cells.isEmpty()) {
@@ -532,7 +583,7 @@ public final class MainActivity extends Activity {
         int ambient = app.ambientColor(artwork);
         AppTile tile = new AppTile(this, app, artwork, ambient, theme, style, pinned);
         appTiles.add(tile);
-        focusable(tile, "app:" + app.packageName(), glass(18, ambient, false, false),
+        focusable(tile, "app:" + app.packageName(), null,
                 () -> launch(app.launchIntent(), tile));
         tile.setOnLongClickListener(view -> {
             view.requestFocusFromTouch();
@@ -734,21 +785,23 @@ public final class MainActivity extends Activity {
     }
 
     private void addSettings() {
-        addPageTitle("Settings", "Materials, lighting, motion and personal details.");
+        content.addView(label("Settings", 32, TEXT, MEDIUM));
         List<View> cells = new ArrayList<>();
-        cells.add(settingTile("TV settings", "Network, sound and device preferences", "settings:system",
-                () -> launch(new Intent(Settings.ACTION_SETTINGS))));
-        cells.add(settingTile("Default Home app", "Choose which launcher the Home button opens", "settings:home",
-                () -> launch(new Intent(Settings.ACTION_HOME_SETTINGS))));
+        Map<Integer, String> sections = new LinkedHashMap<>();
+        sections.put(cells.size(), "Appearance");
         addChoice(cells, "App tile size", "tile_size", 2, "Compact", "Standard", "Large");
         cells.add(settingTile("Color theme", theme.label, "settings:theme", this::showThemes));
         addChoice(cells, "Glass finish", "material", 0, VisualStyle.MATERIALS);
         addChoice(cells, "Wallpaper", "wallpaper", 0, VisualStyle.WALLPAPERS);
+        addChoice(cells, "Icon size", "icon_size", 1, "Small", "Medium", "Large");
+        cells.add(settingTile("Reset appearance", "Restore the default theme, size and clock choices",
+                "settings:reset", this::confirmResetAppearance));
+        sections.put(cells.size(), "Lighting & motion");
         addChoice(cells, "3D depth", "depth", 2, VisualStyle.DEPTHS);
         addChoice(cells, "Ambient light", "ambient", 2, VisualStyle.LIGHT_LEVELS);
-        addChoice(cells, "Icon size", "icon_size", 1, "Small", "Medium", "Large");
         addChoice(cells, "Scene lighting", "lighting", 0, VisualStyle.LIGHTING);
         addChoice(cells, "Motion", "motion", 2, "Full", "Standard", "Subtle", "Off");
+        sections.put(cells.size(), "Home & weather");
         String name = prefs.getString("display_name", "");
         cells.add(settingTile("Personal greeting", name.isEmpty() ? "Add your name" : name,
                 "settings:name", () -> editText("Your name", "display_name", "")));
@@ -758,9 +811,12 @@ public final class MainActivity extends Activity {
         addChoice(cells, "Weather on Home", "weather", 1, "Off", "On");
         cells.add(settingTile("Weather location", weather.location, "settings:location", this::editWeatherLocation));
         cells.add(settingTile("Open idle clock", "Show the clock now", "settings:idle_now", this::showIdleClock));
-        cells.add(settingTile("Reset appearance", "Restore the default theme, size and clock choices",
-                "settings:reset", this::confirmResetAppearance));
-        addGrid(cells, 2, 64);
+        sections.put(cells.size(), "TV & system");
+        cells.add(settingTile("TV settings", "Network, sound and device preferences", "settings:system",
+                () -> launch(new Intent(Settings.ACTION_SETTINGS))));
+        cells.add(settingTile("Default Home app", "Choose which launcher the Home button opens", "settings:home",
+                () -> launch(new Intent(Settings.ACTION_HOME_SETTINGS))));
+        addGrid(cells, 2, 64, sections);
     }
 
     private void showThemes() {
@@ -941,6 +997,10 @@ public final class MainActivity extends Activity {
     }
 
     private void addGrid(List<View> cells, int columns, int height) {
+        addGrid(cells, columns, height, Collections.emptyMap());
+    }
+
+    private void addGrid(List<View> cells, int columns, int height, Map<Integer, String> sections) {
         firstItem = cells.get(0);
         int up = tabButtons.get(page.ordinal()).getId();
         int weatherColumn = Math.min(columns, cells.size()) - 1;
@@ -950,6 +1010,12 @@ public final class MainActivity extends Activity {
             weatherInfo.setNextFocusDownId(cells.get(weatherColumn).getId());
         }
         for (int start = 0; start < cells.size(); start += columns) {
+            String section = sections.get(start);
+            if (section != null) {
+                TextView heading = label(section, 19, accent(), MEDIUM);
+                heading.setPadding(0, dp(10), 0, dp(7));
+                content.addView(heading);
+            }
             LinearLayout line = row();
             line.setClipChildren(false);
             LinearLayout.LayoutParams lineSize = new LinearLayout.LayoutParams(-1, dp(height));
@@ -1079,7 +1145,7 @@ public final class MainActivity extends Activity {
         idle.setOnClickListener(view -> dismissIdle());
         screen.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS);
         root.addView(idle, new FrameLayout.LayoutParams(-1, -1));
-        Atmosphere idleBackground = new Atmosphere(this, theme, style, false);
+        Atmosphere idleBackground = new Atmosphere(this, theme, style);
         idleBackground.setDrifting(true);
         idle.addView(idleBackground, new FrameLayout.LayoutParams(-1, -1));
         View shade = new View(this);
@@ -1164,14 +1230,10 @@ public final class MainActivity extends Activity {
             if (focused && key != null && !key.startsWith("tab:")) focusByPage.put(page, key);
             if (v instanceof AppTile) {
                 if (focused) focusAppTile((AppTile) v);
-                else ((AppTile) v).showDepth(false, 0, false, false);
+                else ((AppTile) v).showDepth(false, 0, false);
             } else {
                 float scale = focused ? 1.015f : 1f;
                 v.animate().scaleX(scale).scaleY(scale).setDuration(style.duration(160)).start();
-                if (focused && activePanel == null && focusHalo != null) {
-                    focusHalo.clear();
-                    for (AppTile tile : appTiles) tile.showDepth(false, 0, false, false);
-                }
             }
         });
     }
@@ -1179,16 +1241,12 @@ public final class MainActivity extends Activity {
     private void focusAppTile(AppTile selected) {
         int index = appTiles.indexOf(selected);
         int direction = lastAppPosition < 0 || index >= lastAppPosition ? -1 : 1;
-        for (int i = 0; i < appTiles.size(); i++) {
-            appTiles.get(i).showDepth(i == index, direction, Math.abs(i - index) == 1,
-                    arrangingPackage != null);
-        }
+        selected.showDepth(true, direction, arrangingPackage != null);
         lastAppPosition = index;
         selected.post(() -> {
             if (!selected.hasFocus() || !selected.isAttachedToWindow() || activePanel != null) return;
             float x = (selected.getLeft() + selected.getWidth() / 2f) / Math.max(1, content.getWidth()) * 2 - 1;
             wallpaper.focusLight(selected.ambient, x, index / (float) Math.max(1, appTiles.size() - 1) - .5f);
-            focusHalo.follow(selected, root, selected.ambient, style);
         });
     }
 

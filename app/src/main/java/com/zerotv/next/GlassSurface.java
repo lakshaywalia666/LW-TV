@@ -29,7 +29,6 @@ final class GlassSurface extends Drawable {
     private Shader glaze;
     private Shader edge;
     private Shader glow;
-    private Shader bevel;
     private Shader reflection;
     private ValueAnimator sweep;
     private float sweepPosition = -1f;
@@ -72,7 +71,7 @@ final class GlassSurface extends Drawable {
         sweepPosition = -1f;
         if (focused && style.duration(1) > 0) {
             sweep = ValueAnimator.ofFloat(-.5f, 1.5f);
-            sweep.setDuration(style.duration(650));
+            sweep.setDuration(style.duration(390));
             sweep.addUpdateListener(animation -> {
                 sweepPosition = (float) animation.getAnimatedValue();
                 invalidateSelf();
@@ -105,8 +104,8 @@ final class GlassSurface extends Drawable {
         glaze = new LinearGradient(shape.left, shape.top, shape.right, shape.bottom,
                 upper, lower, Shader.TileMode.CLAMP);
         edge = new LinearGradient(shape.left, shape.top, shape.right, shape.bottom,
-                focused ? tint(theme.accent, 248) : tint(theme.accent, selected ? 136 : 67),
-                focused ? tint(theme.accent, 174) : tint(theme.accent, selected ? 65 : 28),
+                focused ? Color.WHITE : tint(theme.accent, selected ? 110 : 28),
+                focused ? theme.accent : tint(theme.accent, selected ? 60 : 12),
                 Shader.TileMode.CLAMP);
         if (ambient != Color.TRANSPARENT && style.lightAmount() > 0) {
             float strength = style.lightAmount();
@@ -116,11 +115,8 @@ final class GlassSurface extends Drawable {
                             tint(ambient, Math.round((focused ? 85 : 44) * strength)),
                             tint(ambient, 0)}, new float[]{0f, .40f, 1f}, Shader.TileMode.CLAMP);
         }
-        bevel = new LinearGradient(0, shape.top, 0, shape.bottom,
-                new int[]{tint(0xFFFFFFFF, style.material == 1 ? 65 : 39), tint(0xFFFFFFFF, 0),
-                        tint(Color.BLACK, 58)}, new float[]{0f, .25f, 1f}, Shader.TileMode.CLAMP);
         reflection = new LinearGradient(0, 0, shape.width() * .48f, 0,
-                new int[]{0x00FFFFFF, 0x28FFFFFF, 0x00FFFFFF},
+                new int[]{0x00FFFFFF, 0x18FFFFFF, 0x00FFFFFF},
                 new float[]{0f, .48f, 1f}, Shader.TileMode.CLAMP);
     }
 
@@ -138,11 +134,6 @@ final class GlassSurface extends Drawable {
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(focused ? stroke * 2f : stroke);
         canvas.drawRoundRect(shape, radius, radius, paint);
-        paint.setShader(bevel);
-        paint.setStrokeWidth(stroke);
-        canvas.drawRoundRect(shape.left + stroke * 2, shape.top + stroke * 2,
-                shape.right - stroke * 2, shape.bottom - stroke * 2,
-                Math.max(0, radius - stroke * 2), Math.max(0, radius - stroke * 2), paint);
         if (sweepPosition >= -.5f && sweepPosition <= 1.5f && focused) {
             int layer = canvas.save();
             canvas.clipPath(clip);
@@ -158,6 +149,7 @@ final class GlassSurface extends Drawable {
     @Override
     public void getOutline(Outline outline) {
         outline.setRoundRect(getBounds(), radius);
+        outline.setAlpha(0f);
     }
 
     @Override public void setAlpha(int alpha) { paint.setAlpha(alpha); }
