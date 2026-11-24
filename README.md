@@ -3,18 +3,30 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/lakshaywalia666/LW-TV/releases/download/v3.0.1/LW-TV-3.0.1.apk"><strong>Download LW TV 3.0.1</strong></a>
+  <a href="https://github.com/lakshaywalia666/LW-TV/releases/download/v3.1.0/LW-TV-3.1.0.apk"><strong>Download LW TV 3.1.0</strong></a>
   · <a href="https://github.com/lakshaywalia666/LW-TV/releases/latest">Release notes and checksum</a>
   · <a href="#install-on-your-tv">Installation guide</a>
 </p>
 
-LW TV is an ad-free home launcher for Android TV. Its floating glass cards put your favorite apps, HDMI inputs, weather and settings within reach of the remote.
+LW TV is an ad-free home launcher for Android TV. Its minimal Home screen puts your favorite apps, HDMI inputs, weather and settings within reach of the remote. App artwork sits above its name, with a clear focus outline and lighting that follows your selection.
+
+## New in 3.1.0
+
+- App icons lift and settle as you move with the D-pad. Captions brighten on focus.
+- Page rows enter in sequence, and a slim underline slides between tabs.
+- The background glow follows the selected app, with softer glass borders and layered aurora ribbons.
+- Select anywhere on the weather card to open its details.
+- Settings groups the controls under Appearance, Lighting & motion, Home & weather, and TV & system.
+
+Choose **Settings → Lighting & motion → Motion** to select Full, Standard, Subtle or Off. Subtle is the default.
+
+Version 3.1.0 uses the same signing certificate as the 3.0.1 GitHub release. Install it over that release to keep your preferences. The UI was checked on an Android emulator at 1080p, with Home layout checks at 720p. Animation performance depends on the TV.
 
 ## Make it yours
 
 | Feature | What you can do |
 | --- | --- |
-| Floating glass | Lift and tilt the selected card. Its icon rises above the glass while a reflection sweeps across it and the wallpaper shifts with focus. |
+| Focus and motion | Lift and tilt the selected card, animate its icon, and let app-colored lighting follow your remote. Page transitions and focus effects follow your Motion setting. |
 | Scene design | Choose from five color themes, three glass finishes and four wallpapers. Adjust depth, icon size, ambient glow and motion, or let scene lighting follow the time of day. |
 | Favorites and inputs | Reorder favorites with the D-pad, jump to HDMI inputs, and give each input a name and device symbol. |
 | Weather and air quality | See the temperature and an Indian AQI estimate, then open the card for a 24-hour trend, pollutant readings and model time. |
@@ -22,7 +34,7 @@ LW TV is an ad-free home launcher for Android TV. Its floating glass cards put y
 
 ## Install on your TV
 
-LW TV targets Android TV and Google TV devices running Android 6.0 or newer. The launcher was developed on a Redmi TV with Android 11. Home selection and HDMI availability depend on the device firmware.
+LW TV targets Android TV and Google TV devices running Android 6.0 or newer. Home selection and HDMI availability depend on the device firmware.
 
 ```mermaid
 flowchart TD
@@ -42,7 +54,7 @@ flowchart TD
 
 ### Option 1 · Install from the TV
 
-1. Download `LW-TV-3.0.1.apk` from [GitHub Releases](https://github.com/lakshaywalia666/LW-TV/releases/latest).
+1. Download `LW-TV-3.1.0.apk` from [GitHub Releases](https://github.com/lakshaywalia666/LW-TV/releases/latest).
 2. Copy it to a USB drive or use a file transfer app to send it to your TV.
 3. Open the APK in the TV’s file manager. If prompted, allow **Install unknown apps** for that file manager, then confirm the installation.
 4. Open **LW TV** from the TV’s Apps screen.
@@ -64,7 +76,7 @@ flowchart TD
 
    ```sh
    adb devices
-   adb install -r LW-TV-3.0.1.apk
+   adb install -r LW-TV-3.1.0.apk
    adb shell am start -n com.zerotv.next/.MainActivity
    ```
 
@@ -104,7 +116,8 @@ If the TV rejects Home selection, you can still use LW TV from **Apps**.
 | All apps | Hold **OK** to pin or unpin an app or open its Android app info. |
 | Any tab | Press **Menu** or select **≡** beside the clock to open Quick settings. |
 | Inputs | Hold **OK** on an HDMI card to rename it or choose a device symbol. |
-| Settings | Adjust the scene, set a greeting or choose **Weather location** to enter a place name and decimal coordinates. |
+| Weather | Select the weather card and press **OK** for weather and air quality details. |
+| Settings | Adjust appearance and motion, set a greeting or choose **Weather location** under **Home & weather** to enter a place name and decimal coordinates. |
 | Screensaver | Open **Menu → Screensaver** to choose a clock, change the delay or preview it. Press a direction or **OK** to return. |
 
 ## Weather and privacy
@@ -128,7 +141,7 @@ The build writes `dist/LW-TV-local.apk` and creates a local signing key on the f
 To check a download on Windows, compare its hash with `SHA256SUMS.txt` from the release.
 
 ```powershell
-Get-FileHash .\LW-TV-3.0.1.apk -Algorithm SHA256
+Get-FileHash .\LW-TV-3.1.0.apk -Algorithm SHA256
 ```
 
 LW TV is an independent launcher. App names and logos identify the corresponding apps.
